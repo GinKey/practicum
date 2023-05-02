@@ -1,7 +1,7 @@
-import pygame
-import random
 import os
+import random
 
+import pygame
 
 # Define constants
 WIDTH = 800
@@ -42,6 +42,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.image = player_image
+        self.current_image = player_image
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
         self.speed = 0
@@ -55,8 +56,14 @@ class Player(pygame.sprite.Sprite):
         elif keystate[pygame.K_RIGHT]:
             self.angle -= 4
 
+        # Change player image if up key is pressed
+        if keystate[pygame.K_UP]:
+            self.current_image = player_engine_image
+        else:
+            self.current_image = player_image
+
         # Rotate the player image
-        self.image = pygame.transform.rotate(player_image, self.angle)
+        self.image = pygame.transform.rotate(self.current_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
         screen.blit(self.image, self.rect)
 
@@ -71,6 +78,7 @@ class Player(pygame.sprite.Sprite):
                 self.speed -= 0.02
         self.speed = max(0, min(5, self.speed))
         self.rect.move_ip(direction * self.speed)
+
 
         # Check if player is out of bounds and wrap around to opposite side
         if self.rect.left > WIDTH:
@@ -109,23 +117,23 @@ class Asteroid(pygame.sprite.Sprite):
         if side == 'left':
             self.rect.x = 0 - self.rect.width
             self.rect.y = random.randrange(0, HEIGHT - self.rect.height)
-            self.speedx = random.randrange(1, 4)
+            self.speedx = random.randrange(1, 3)
             self.speedy = random.randrange(-2, 2)
         elif side == 'right':
             self.rect.x = WIDTH
             self.rect.y = random.randrange(0, HEIGHT - self.rect.height)
-            self.speedx = random.randrange(-4, -1)
+            self.speedx = random.randrange(-3, -1)
             self.speedy = random.randrange(-2, 2)
         elif side == 'top':
             self.rect.x = random.randrange(0, WIDTH - self.rect.width)
             self.rect.y = 0 - self.rect.height
             self.speedx = random.randrange(-2, 2)
-            self.speedy = random.randrange(1, 4)
+            self.speedy = random.randrange(1, 3)
         else:
             self.rect.x = random.randrange(0, WIDTH - self.rect.width)
             self.rect.y = HEIGHT
             self.speedx = random.randrange(-2, 2)
-            self.speedy = random.randrange(-4, -1)
+            self.speedy = random.randrange(-3, -1)
 
     def update(self):
         self.rect.x += self.speedx
