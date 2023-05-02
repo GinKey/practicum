@@ -62,11 +62,21 @@ class Player(pygame.sprite.Sprite):
         # Handle movement
         direction = pygame.Vector2(0, -1).rotate(-self.angle)
         if keystate[pygame.K_UP]:
-            self.speed += 0.1
+            self.speed += 0.5
         elif keystate[pygame.K_DOWN]:
             self.speed -= 0.1
         self.speed = max(-3, min(3, self.speed))
         self.rect.move_ip(direction * self.speed)
+
+        # Check if player is out of bounds and wrap around to opposite side
+        if self.rect.left > WIDTH:
+            self.rect.right = 0
+        elif self.rect.right < 0:
+            self.rect.left = WIDTH
+        elif self.rect.top > HEIGHT:
+            self.rect.bottom = 0
+        elif self.rect.bottom < 0:
+            self.rect.top = HEIGHT
 
     def shoot(self):
         bullet = Bullet(self.rect.centerx, self.rect.top)
@@ -80,21 +90,45 @@ class Asteroid(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.image = random.choice(asteroid_images)
-        self.image = pygame.transform.scale(self.image, (random.randint(30, 60), random.randint(30, 60))) # Уменьшаем размер астероида
+        self.image = pygame.transform.scale(self.image, (random.randint(40, 90), random.randint(40, 90)))
         self.rect = self.image.get_rect()
-        self.rect.x = random.randrange(WIDTH - self.rect.width)
-        self.rect.y = random.randrange(-100, -40)
-        self.speedy = random.randrange(1, 4) # Медленнее
-        self.speedx = random.randrange(-2, 2) # Медленнее
+
+        # Случайно выбираем одну из граней экрана и генерируем координаты вдоль неё
+        side = random.choice(['left', 'right', 'top', 'bottom'])
+        if side == 'left':
+            self.rect.x = 0 - self.rect.width
+            self.rect.y = random.randrange(0, HEIGHT - self.rect.height)
+            self.speedx = random.randrange(1, 4)
+            self.speedy = random.randrange(-2, 2)
+        elif side == 'right':
+            self.rect.x = WIDTH
+            self.rect.y = random.randrange(0, HEIGHT - self.rect.height)
+            self.speedx = random.randrange(-4, -1)
+            self.speedy = random.randrange(-2, 2)
+        elif side == 'top':
+            self.rect.x = random.randrange(0, WIDTH - self.rect.width)
+            self.rect.y = 0 - self.rect.height
+            self.speedx = random.randrange(-2, 2)
+            self.speedy = random.randrange(1, 4)
+        else:
+            self.rect.x = random.randrange(0, WIDTH - self.rect.width)
+            self.rect.y = HEIGHT
+            self.speedx = random.randrange(-2, 2)
+            self.speedy = random.randrange(-4, -1)
 
     def update(self):
         self.rect.x += self.speedx
         self.rect.y += self.speedy
-        if self.rect.top > HEIGHT + 10 or self.rect.left < -25 or self.rect.right > WIDTH + 25:
-            self.rect.x = random.randrange(WIDTH - self.rect.width)
-            self.rect.y = random.randrange(-100, -40)
-            self.speedy = random.randrange(1, 4) # Медленнее
-            self.speedx = random.randrange(-2, 2) # Медленнее
+
+        # Если астероид вышел за границы экрана, переносим его на противоположную грань
+        if self.rect.right < 0:
+            self.rect.left = WIDTH
+        elif self.rect.left > WIDTH:
+            self.rect.right = 0
+        elif self.rect.bottom < 0:
+            self.rect.top = HEIGHT
+        elif self.rect.top > HEIGHT:
+            self.rect.bottom = 0
 
 
 class Bullet(pygame.sprite.Sprite):
