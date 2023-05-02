@@ -3,7 +3,6 @@ import random
 
 import pygame
 
-# Define constants
 WIDTH = 800
 HEIGHT = 600
 FPS = 60
@@ -47,6 +46,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
         self.speed = 0
         self.angle = 0
+        self.lives = 3
 
     def update(self):
         # Handle rotation
@@ -187,6 +187,35 @@ class Bullet(pygame.sprite.Sprite):
         self.speedx = direction.x * self.speed
         self.speedy = direction.y * self.speed
 
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.images = []
+        for i in range(3):
+            image = pygame.image.load(os.path.join("assets/explosion", f"explosion_{i}.png")).convert_alpha()
+            image = pygame.transform.scale(image, (100, 100))
+            self.images.append(image)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.frame_rate = 50
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate:
+            self.last_update = now
+            self.frame += 1
+            if self.frame == len(self.images):
+                self.kill()
+            else:
+                center = self.rect.center
+                self.image = self.images[self.frame]
+                self.rect = self.image.get_rect()
+                self.rect.center = center
+
+
 # Create game objects
 all_sprites = pygame.sprite.Group()
 asteroids = pygame.sprite.Group()
@@ -201,6 +230,12 @@ for i in range(8):
 
 # Start game loop
 running = True
+
+# Set up lives
+LIVES = 3
+HEART_IMAGE = pygame.image.load(os.path.join("assets", "heart.png")).convert_alpha()
+score = 0
+font = pygame.font.Font(None, 30)
 
 while running:
     # Set clock
@@ -221,23 +256,43 @@ while running:
     hits = pygame.sprite.groupcollide(asteroids, bullets, True, True)
     for hit in hits:
         explosion_sound.play()
+        explosion = Explosion(hit.rect.centerx, hit.rect.centery)
+        all_sprites.add(explosion)
         asteroid = Asteroid()
         all_sprites.add(asteroid)
         asteroids.add(asteroid)
+        score += 10
 
-    hits = pygame.sprite.spritecollide(player, asteroids, False)
-    if hits:
-        player.kill()
+    if pygame.sprite.spritecollide(player, asteroids, False):
+        LIVES -= 1
         explosion_sound.play()
-        running = False
+        if LIVES == 0:
+            player.kill()
+            running = False
+        else:
+            player.rect.center = (WIDTH / 2, HEIGHT / 2)
 
     # Draw graphics
     screen.blit(background_image, (0, 0))
     all_sprites.draw(screen)
 
+    # Draw lives
+    for i in range(LIVES):
+        heart_rect = HEART_IMAGE.get_rect()
+        heart_rect.x = i * heart_rect.width + 10
+        heart_rect.y = 10
+        screen.blit(HEART_IMAGE, heart_rect)
+
+    score_text = font.render("Очки: {}".format(score), True, WHITE)
+    score_rect = score_text.get_rect()
+    score_rect.top = 10
+    score_rect.right = WIDTH - 10
+    screen.blit(score_text, score_rect)
+
     # Flip display
     pygame.display.flip()
 
+# Quit game
 pygame.quit()
 
 
