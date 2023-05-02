@@ -215,10 +215,38 @@ class Explosion(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.center = center
 
+class Comet(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load(os.path.join("assets", "white_asteroid.png")).convert_alpha()
+        self.image = pygame.transform.scale(self.image,
+                                                     (random.randint(40, 90), random.randint(40, 90)))
+        self.rect = self.image.get_rect()
+
+        # Случайное расположение и скорость
+        self.rect.x = random.randint(0, WIDTH - self.rect.width)
+        self.rect.y = random.randint(0, HEIGHT - self.rect.height)
+        self.speedx = random.randint(0, 5)
+        self.speedy = random.randint(3, 9)
+
+    def update(self):
+        self.rect.x += self.speedx
+        self.rect.y += self.speedy
+
+        # Проверка выхода за границы экрана
+        if self.rect.left > WIDTH:
+            self.rect.right = 0
+        elif self.rect.right < 0:
+            self.rect.left = WIDTH
+        elif self.rect.top > HEIGHT:
+            self.rect.bottom = 0
+        elif self.rect.bottom < 0:
+            self.rect.top = HEIGHT
 
 # Create game objects
 all_sprites = pygame.sprite.Group()
 asteroids = pygame.sprite.Group()
+comets = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 player = Player()
 all_sprites.add(player)
@@ -227,6 +255,11 @@ for i in range(8):
     asteroid = Asteroid()
     all_sprites.add(asteroid)
     asteroids.add(asteroid)
+
+for i in range(random.randint(10, 15 )):
+    comet = Comet()
+    all_sprites.add(comet)
+    comets.add(comet)
 
 # Start game loop
 running = True
