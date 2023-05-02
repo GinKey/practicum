@@ -26,6 +26,7 @@ clock = pygame.time.Clock()
 # Load images
 background_image = pygame.image.load(os.path.join("assets", "background.png")).convert()
 player_image = pygame.image.load(os.path.join("assets", "player.png")).convert_alpha()
+player_engine_image = pygame.image.load(os.path.join("assets", "player_engine.png")).convert_alpha()
 asteroid_images = [
     pygame.image.load(os.path.join("assets", "asteroid.png")).convert_alpha(),
     pygame.image.load(os.path.join("assets", "asteroid.png")).convert_alpha(),
@@ -50,9 +51,9 @@ class Player(pygame.sprite.Sprite):
         # Handle rotation
         keystate = pygame.key.get_pressed()
         if keystate[pygame.K_LEFT]:
-            self.angle += 3
+            self.angle += 4
         elif keystate[pygame.K_RIGHT]:
-            self.angle -= 3
+            self.angle -= 4
 
         # Rotate the player image
         self.image = pygame.transform.rotate(player_image, self.angle)
@@ -62,10 +63,13 @@ class Player(pygame.sprite.Sprite):
         # Handle movement
         direction = pygame.Vector2(0, -1).rotate(-self.angle)
         if keystate[pygame.K_UP]:
-            self.speed += 0.5
+            self.speed += 1
         elif keystate[pygame.K_DOWN]:
-            self.speed -= 0.1
-        self.speed = max(-3, min(3, self.speed))
+            self.speed -= 0.2
+        else:
+            if self.speed > 0:
+                self.speed -= 0.02
+        self.speed = max(0, min(5, self.speed))
         self.rect.move_ip(direction * self.speed)
 
         # Check if player is out of bounds and wrap around to opposite side
@@ -79,19 +83,26 @@ class Player(pygame.sprite.Sprite):
             self.rect.top = HEIGHT
 
     def shoot(self):
-        bullet = Bullet(self.rect.centerx, self.rect.top)
+        bullet = Bullet(self.rect.centerx, self.rect.centery)
         bullet.set_angle(self.angle)
         all_sprites.add(bullet)
         bullets.add(bullet)
         shoot_sound.play()
 
 
+
 class Asteroid(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = random.choice(asteroid_images)
-        self.image = pygame.transform.scale(self.image, (random.randint(40, 90), random.randint(40, 90)))
+        self.original_image = random.choice(asteroid_images)
+        self.original_image = pygame.transform.scale(self.original_image,
+                                                     (random.randint(40, 90), random.randint(40, 90)))
+        self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
+
+        # Новые атрибуты
+        self.rotation_speed = random.randint(-1, 1)  # Случайная скорость вращения
+        self.angle = 0  # Начальный угол поворота
 
         # Случайно выбираем одну из граней экрана и генерируем координаты вдоль неё
         side = random.choice(['left', 'right', 'top', 'bottom'])
@@ -119,6 +130,14 @@ class Asteroid(pygame.sprite.Sprite):
     def update(self):
         self.rect.x += self.speedx
         self.rect.y += self.speedy
+
+        # Изменяем угол поворота на основе скорости вращения
+        self.angle += self.rotation_speed
+
+        # Поворачиваем астероид вокруг центра оси
+        rotated_image = pygame.transform.rotate(self.original_image, self.angle)
+        self.rect = rotated_image.get_rect(center=self.rect.center)
+        self.image = rotated_image
 
         # Если астероид вышел за границы экрана, переносим его на противоположную грань
         if self.rect.right < 0:
