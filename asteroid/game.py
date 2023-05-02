@@ -99,7 +99,7 @@ class Player(pygame.sprite.Sprite):
 
 
 
-class Asteroid(pygame.sprite.Sprite):
+class  Asteroid(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.original_image = random.choice(asteroid_images)
@@ -299,11 +299,18 @@ while running:
     if pygame.sprite.spritecollide(player, asteroids, False):
         LIVES -= 1
         explosion_sound.play()
+        for asteroid in asteroids:
+            asteroid.kill()
         if LIVES == 0:
             player.kill()
             running = False
         else:
             player.rect.center = (WIDTH / 2, HEIGHT / 2)
+            asteroids.empty()
+            for i in range(8):
+                asteroid = Asteroid()
+                all_sprites.add(asteroid)
+                asteroids.add(asteroid)
 
     # Draw graphics
     screen.blit(background_image, (0, 0))
